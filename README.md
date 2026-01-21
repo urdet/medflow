@@ -40,7 +40,8 @@ MedFlow is a comprehensive pharmacy management system designed to streamline ope
 6. Open your web browser and navigate to `http://localhost:3000` to access MedFlow.
 ## .env Configuration
 Create a `.env` file in the root directory of the project and add the following environment variables:
-```JWT_SECRET="YourSecretKey"
+```
+JWT_SECRET="YourSecretKey"
 POSTGRES_USER="your_postgres_username"
 POSTGRES_PASSWORD="your_postgres_password"
 POSTGRES_DB="your_database_name"
