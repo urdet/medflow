@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFlow | Sales</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
+        
+        .modal-overlay { transition: opacity 0.3s ease-out; }
+        .modal-container { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
+        .modal-hidden { opacity: 0; pointer-events: none; visibility: hidden; }
+        .modal-hidden .modal-container { transform: scale(0.95); opacity: 0; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-slate-300 flex-col hidden md:flex fixed h-full z-40 shadow-xl">
+            <div class="p-6 flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <i data-lucide="layout-dashboard" class="text-white w-6 h-6"></i>
+                </div>
+                <span class="text-white font-bold text-xl tracking-tight">MedFlow</span>
+            </div>
+            <nav class="flex-1 px-4 space-y-1 mt-4">
+                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                    <i data-lucide="home" class="w-5 h-5"></i>
+                    <span class="font-medium text-sm">Dashboard</span>
+                </a>
+                <a href="medicines.html" class="flex items-center gap-3 px-4 py-3 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                    <i data-lucide="pill" class="w-5 h-5"></i>
+                    <span class="font-medium text-sm">Medicines</span>
+                </a>
+                <a href="suppliers.html" class="flex items-center gap-3 px-4 py-3 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span class="font-medium text-sm">Suppliers</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-blue-400 bg-blue-600/10 border border-blue-600/20 rounded-xl">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                    <span class="font-medium text-sm">Sales</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 md:ml-64 p-4 lg:p-10">
+            <!-- Header Section -->
+            <header class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Sales Transactions</h1>
+                    <p class="text-slate-500 mt-1">Review and manage point-of-sale activities.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <i data-lucide="filter" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <select id="sortSelect" class="pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 appearance-none shadow-sm cursor-pointer">
+                            <option value="date-desc">Newest First</option>
+                            <option value="date-asc">Oldest First</option>
+                            <option value="price-desc">Highest Price</option>
+                            <option value="price-asc">Lowest Price</option>
+                        </select>
+                    </div>
+                    <button onclick="toggleModal(true)" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20">
+                        <i data-lucide="plus" class="w-4 h-4"></i> New Sale
+                    </button>
+                </div>
+            </header>
+
+            <!-- Table Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50/50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">ID</th>
+                                <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Medicine</th>
+                                <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Qty</th>
+                                <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Total Price</th>
+                                <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sale Date</th>
+                                <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesTableBody" class="divide-y divide-slate-100 text-sm">
+                            <!-- JS Population -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="loadingState" class="p-20 text-center">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
+                    <p class="text-slate-400 text-sm font-medium">Loading sales history...</p>
+                </div>
+                <div id="emptyState" class="hidden p-20 text-center">
+                    <i data-lucide="receipt" class="w-12 h-12 text-slate-200 mx-auto mb-4"></i>
+                    <h3 class="text-slate-900 font-bold">No Transactions</h3>
+                    <p class="text-slate-500 text-sm mt-1">Start a new sale to see records here.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Sale Modal -->
+    <div id="saleModal" class="fixed inset-0 z-[60] flex items-center justify-center modal-hidden p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm modal-overlay" onclick="toggleModal(false)"></div>
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl relative z-10 modal-container overflow-hidden">
+            <div class="p-8 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-slate-900">Process Sale</h2>
+                <button onclick="toggleModal(false)" class="text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="saleForm" class="p-8 space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Medicine</label>
+                    <select id="medicineId" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em] transition-all" style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E')">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quantity</label>
+                        <input type="number" id="qtySold" required min="1" placeholder="0" 
+                               class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Available Stock</label>
+                        <div id="stockDisplay" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 font-medium">
+                            Select medicine
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pricePreview" class="bg-blue-50 p-4 rounded-2xl flex justify-between items-center hidden">
+                    <span class="text-blue-700 text-sm font-semibold tracking-wide uppercase">Estimated Total</span>
+                    <span id="totalDisplay" class="text-blue-700 font-bold text-xl">0.00</span>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="toggleModal(false)" class="flex-1 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-[2] py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20">
+                        Confirm Sale
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[100] translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+            <i id="toastIcon" data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+            <span id="toastMessage" class="text-sm font-medium">Success!</span>
+        </div>
+    </div>
+
+    <script>
+    const API_BASE = 'http://localhost:3000/api';
+    const SALES_API = `${API_BASE}/sales`;
+    const MEDICINES_API = `${API_BASE}/medicines`;
+    
+    let sales = [];
+    let medicines = [];
+    let selectedMedicine = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        fetchInitialData();
+
+        // Handle sorting
+        document.getElementById('sortSelect')?.addEventListener('change', (e) => {
+            sortAndRender(e.target.value);
+        });
+
+        // Handle Stock & Price Preview
+        document.getElementById('medicineId')?.addEventListener('change', updateMedicineSelection);
+        document.getElementById('qtySold')?.addEventListener('input', updatePricePreview);
+
+        // Handle Form
+        document.getElementById('saleForm')?.addEventListener('submit', handleSaleSubmit);
+    });
+
+    async function fetchInitialData() {
+        const loading = document.getElementById('loadingState');
+        const empty = document.getElementById('emptyState');
+        
+        if (loading) loading.classList.remove('hidden');
+        if (empty) empty.classList.add('hidden');
+        
+        try {
+            // Fetch sales and medicines in parallel
+            const [salesRes, medsRes] = await Promise.all([
+                fetch(SALES_API),
+                fetch(MEDICINES_API)
+            ]);
+
+            if (!salesRes.ok) throw new Error(`Sales API error: ${salesRes.status}`);
+            if (!medsRes.ok) throw new Error(`Medicines API error: ${medsRes.status}`);
+
+            sales = await salesRes.json();
+            medicines = await medsRes.json();
+
+            // Filter only medicines with available stock
+            const availableMedicines = medicines.filter(m => m.quantity > 0);
+            populateMedicineDropdown(availableMedicines);
+            
+            sortAndRender('date-desc');
+            
+            if (loading) loading.classList.add('hidden');
+            
+            if (sales.length === 0 && empty) {
+                empty.classList.remove('hidden');
+            }
+            
+        } catch (err) {
+            console.error("Initial fetch error:", err);
+            
+            if (loading) loading.classList.add('hidden');
+            
+            // Fallback to mock data for demo
+            console.log("Using fallback mock data...");
+            sales = [
+                { id: 101, medicine_name: 'Amoxicillin', quantity_sold: 2, total_price: 25.00, sale_date: '2025-05-15T10:30:00' },
+                { id: 102, medicine_name: 'Paracetamol', quantity_sold: 10, total_price: 52.00, sale_date: '2025-05-15T11:45:00' },
+                { id: 103, medicine_name: 'Ibuprofen', quantity_sold: 1, total_price: 150.00, sale_date: '2025-05-14T09:15:00' }
+            ];
+
+            medicines = [
+                { id: 1, name: 'Amoxicillin', price: 12.50, quantity: 45 },
+                { id: 2, name: 'Paracetamol', price: 5.20, quantity: 8 },
+                { id: 3, name: 'Ibuprofen', price: 15.00, quantity: 20 },
+                { id: 4, name: 'Vitamin C', price: 8.75, quantity: 0 } // Out of stock
+            ];
+            
+            const availableMedicines = medicines.filter(m => m.quantity > 0);
+            populateMedicineDropdown(availableMedicines);
+            sortAndRender('date-desc');
+            
+            showToast("Using demo data - API connection failed", true);
+        }
+    }
+
+    function populateMedicineDropdown(medList) {
+        const select = document.getElementById('medicineId');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="" disabled selected>Choose a medicine...</option>';
+        
+        medList.forEach(m => {
+            select.innerHTML += `<option value="${m.id}" data-price="${m.price}" data-stock="${m.quantity}">
+                ${m.name} - ${parseFloat(m.price).toFixed(2)} (${m.quantity} in stock)
+            </option>`;
+        });
+        
+        // Add optgroup for out of stock items (optional)
+        const outOfStock = medicines.filter(m => m.quantity <= 0);
+        if (outOfStock.length > 0) {
+            select.innerHTML += `<optgroup label="Out of Stock" disabled>`;
+            outOfStock.forEach(m => {
+                select.innerHTML += `<option disabled>${m.name} - Out of Stock</option>`;
+            });
+            select.innerHTML += `</optgroup>`;
+        }
+    }
+
+    function updateMedicineSelection() {
+        const medId = document.getElementById('medicineId').value;
+        const stockDisplay = document.getElementById('stockDisplay');
+        const qtyInput = document.getElementById('qtySold');
+        
+        if (!medId) {
+            stockDisplay.innerText = 'Select medicine';
+            stockDisplay.classList.remove('text-emerald-600', 'text-amber-600');
+            stockDisplay.classList.add('text-slate-400');
+            selectedMedicine = null;
+            return;
+        }
+        
+        const selectedOption = document.querySelector(`#medicineId option[value="${medId}"]`);
+        const price = parseFloat(selectedOption.getAttribute('data-price'));
+        const stock = parseInt(selectedOption.getAttribute('data-stock'));
+        
+        selectedMedicine = { id: medId, price, stock };
+        
+        // Update stock display
+        stockDisplay.innerText = `${stock} units available`;
+        
+        if (stock > 10) {
+            stockDisplay.className = 'w-full px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 font-medium';
+        } else if (stock > 0) {
+            stockDisplay.className = 'w-full px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-amber-600 font-medium';
+        } else {
+            stockDisplay.className = 'w-full px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-600 font-medium';
+        }
+        
+        // Reset quantity input
+        qtyInput.value = '';
+        qtyInput.max = stock;
+        qtyInput.min = 1;
+        
+        updatePricePreview();
+    }
+
+    function updatePricePreview() {
+        const qty = parseInt(document.getElementById('qtySold').value) || 0;
+        const preview = document.getElementById('pricePreview');
+        const totalDisplay = document.getElementById('totalDisplay');
+        
+        if (!selectedMedicine || qty <= 0) {
+            preview.classList.add('hidden');
+            return;
+        }
+        
+        const total = (selectedMedicine.price * qty).toFixed(2);
+        
+        // Update total display with currency formatting
+        totalDisplay.innerText = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(total);
+        
+        // Update preview color based on amount
+        if (total >= 100) {
+            preview.className = 'bg-blue-50 p-4 rounded-2xl flex justify-between items-center border border-blue-100';
+        } else if (total >= 50) {
+            preview.className = 'bg-indigo-50 p-4 rounded-2xl flex justify-between items-center border border-indigo-100';
+        } else {
+            preview.className = 'bg-emerald-50 p-4 rounded-2xl flex justify-between items-center border border-emerald-100';
+        }
+        
+        preview.classList.remove('hidden');
+    }
+
+    function sortAndRender(criteria) {
+        let sorted = [...sales];
+        
+        switch (criteria) {
+            case 'date-desc':
+                sorted.sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
+                break;
+            case 'date-asc':
+                sorted.sort((a, b) => new Date(a.sale_date) - new Date(b.sale_date));
+                break;
+            case 'price-desc':
+                sorted.sort((a, b) => b.total_price - a.total_price);
+                break;
+            case 'price-asc':
+                sorted.sort((a, b) => a.total_price - b.total_price);
+                break;
+        }
+        
+        renderTable(sorted);
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('salesTableBody');
+        const empty = document.getElementById('emptyState');
+        
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        if (data.length === 0) {
+            if (empty) empty.classList.remove('hidden');
+            return;
+        }
+        
+        if (empty) empty.classList.add('hidden');
+
+        data.forEach(s => {
+            const date = new Date(s.sale_date);
+            const isToday = new Date().toDateString() === date.toDateString();
+            const isHighValue = s.total_price >= 100;
+            const isMediumValue = s.total_price >= 50 && s.total_price < 100;
+            
+            tbody.innerHTML += `
+                <tr class="group hover:bg-slate-50 transition-all">
+                    <td class="px-6 py-4 font-mono text-xs text-slate-400">#${s.id}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-slate-900">${s.medicine_name}</span>
+                            <span class="text-xs text-slate-400">Qty: ${s.quantity_sold}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-3 py-1 ${s.quantity_sold > 5 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'} rounded-lg font-bold">
+                            ${s.quantity_sold}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="font-bold ${isHighValue ? 'text-blue-600' : isMediumValue ? 'text-indigo-600' : 'text-slate-900'}">
+                                ${parseFloat(s.total_price).toFixed(2)}
+                            </span>
+                            <span class="text-xs text-slate-400">${(parseFloat(s.total_price) / s.quantity_sold).toFixed(2)}/unit</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="${isToday ? 'text-emerald-600 font-semibold' : 'text-slate-600'}">
+                                ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                            <span class="text-[10px] text-slate-400">
+                                ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="printReceipt(${s.id})" 
+                                    class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Print Receipt">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="viewSaleDetails(${s.id})" 
+                                    class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                    title="View Details">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="handleDelete(${s.id})" 
+                                    class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Void Sale">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        lucide.createIcons();
+    }
+
+    async function handleSaleSubmit(e) {
+        e.preventDefault();
+        
+        const medId = document.getElementById('medicineId').value;
+        const qty = parseInt(document.getElementById('qtySold').value);
+        
+        if (!medId) {
+            showToast("Please select a medicine", true);
+            return;
+        }
+        
+        if (!qty || qty <= 0) {
+            showToast("Please enter a valid quantity", true);
+            return;
+        }
+        
+        const med = medicines.find(m => m.id == medId);
+        
+        // Client-side validation
+        if (!med) {
+            showToast("Medicine not found", true);
+            return;
+        }
+        
+        if (qty > med.quantity) {
+            showToast(`Insufficient stock! Only ${med.quantity} units available`, true);
+            return;
+        }
+
+        try {
+            const saleData = {
+                medicine_id: parseInt(medId),
+                quantity_sold: qty
+            };
+            
+            const response = await fetch(SALES_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(saleData)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to process sale');
+            }
+            
+            const result = await response.json();
+            
+            showToast("Sale completed successfully!");
+            
+            // Reset form and close modal
+            toggleModal(false);
+            
+            // Refresh data
+            await fetchInitialData();
+            
+            // Optional: Print receipt automatically
+            // printReceipt(result.saleId);
+            
+        } catch (err) {
+            console.error("Sale error:", err);
+            showToast(err.message || 'Transaction failed. Please try again.', true);
+        }
+    }
+
+    async function handleDelete(id) {
+    if (!confirm("Are you sure you want to void this sale? This action will restore the stock quantity.")) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${SALES_API}/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to void sale');
+        }
+        
+        const result = await response.json();
+        
+        // Remove from local array
+        sales = sales.filter(s => s.id !== id);
+        
+        // Re-render table
+        renderTable(sales);
+        
+        // Refresh medicines stock
+        const medicineRes = await fetch(MEDICINES_API);
+        if (medicineRes.ok) {
+            medicines = await medicineRes.json();
+            const availableMedicines = medicines.filter(m => m.quantity > 0);
+            populateMedicineDropdown(availableMedicines);
+        }
+        
+        showToast(`Sale voided. ${result.restored_quantity} units restored to stock.`);
+        
+    } catch (err) {
+        console.error("Delete error:", err);
+        showToast(err.message || 'Could not void sale. Please check if the endpoint exists.', true);
+    }
+}
+
+    async function viewSaleDetails(id) {
+        try {
+            // If you have a GET /sales/:id endpoint
+            // const response = await fetch(`${SALES_API}/${id}`);
+            // const sale = await response.json();
+            
+            const sale = sales.find(s => s.id === id);
+            if (!sale) return;
+            
+            const date = new Date(sale.sale_date);
+            const formattedDate = date.toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const details = `
+                Sale #${sale.id}
+                Medicine: ${sale.medicine_name}
+                Quantity: ${sale.quantity_sold}
+                Unit Price: ${(sale.total_price / sale.quantity_sold).toFixed(2)}
+                Total: ${sale.total_price.toFixed(2)}
+                Date: ${formattedDate}
+            `;
+            
+            alert(details);
+            
+        } catch (err) {
+            console.error("Details error:", err);
+            showToast("Could not load sale details", true);
+        }
+    }
+
+    function printReceipt(id) {
+        const sale = sales.find(s => s.id === id);
+        if (!sale) return;
+        
+        const date = new Date(sale.sale_date);
+        const receiptContent = `
+            <div style="font-family: monospace; max-width: 300px; padding: 20px;">
+                <h2 style="text-align: center; margin-bottom: 20px;">MedFlow Pharmacy</h2>
+                <hr>
+                <p><strong>Receipt #:</strong> ${sale.id}</p>
+                <p><strong>Date:</strong> ${date.toLocaleString()}</p>
+                <hr>
+                <p><strong>Item:</strong> ${sale.medicine_name}</p>
+                <p><strong>Qty:</strong> ${sale.quantity_sold}</p>
+                <p><strong>Price:</strong> $${sale.total_price.toFixed(2)}</p>
+                <hr>
+                <h3 style="text-align: center; margin-top: 20px;">Thank You!</h3>
+            </div>
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Receipt #${sale.id}</title>
+                </head>
+                <body onload="window.print(); window.close();">
+                    ${receiptContent}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        
+        showToast("Receipt printed");
+    }
+
+    function toggleModal(show) {
+        const modal = document.getElementById('saleModal');
+        if (!modal) return;
+        
+        if (show) {
+            modal.classList.remove('modal-hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Refresh medicine dropdown to ensure stock is current
+            const availableMedicines = medicines.filter(m => m.quantity > 0);
+            populateMedicineDropdown(availableMedicines);
+            
+            // Reset form
+            document.getElementById('saleForm')?.reset();
+            document.getElementById('pricePreview')?.classList.add('hidden');
+            document.getElementById('stockDisplay').innerText = 'Select medicine';
+            document.getElementById('stockDisplay').className = 'w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 font-medium';
+            
+        } else {
+            modal.classList.add('modal-hidden');
+            document.body.style.overflow = 'auto';
+            selectedMedicine = null;
+        }
+    }
+
+    function showToast(message, isError = false) {
+        // Remove existing toast
+        const existingToast = document.getElementById('customToast');
+        if (existingToast) existingToast.remove();
+        
+        const toast = document.createElement('div');
+        toast.id = 'customToast';
+        toast.className = `fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl ${
+            isError ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
+        } animate-toastIn`;
+        
+        const iconName = isError ? 'x-circle' : 'check-circle-2';
+        const iconColor = isError ? 'text-red-100' : 'text-emerald-100';
+        
+        toast.innerHTML = `
+            <i data-lucide="${iconName}" class="w-5 h-5 ${iconColor}"></i>
+            <span class="text-sm font-medium">${message}</span>
+        `;
+        
+        document.body.appendChild(toast);
+        lucide.createIcons();
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('animate-toastIn');
+            toast.classList.add('animate-toastOut');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+        
+        // Add CSS animations if not present
+        if (!document.querySelector('#toast-animations')) {
+            const style = document.createElement('style');
+            style.id = 'toast-animations';
+            style.textContent = `
+                @keyframes toastIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes toastOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+                .animate-toastIn { animation: toastIn 0.3s ease-out; }
+                .animate-toastOut { animation: toastOut 0.3s ease-out; }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    // Add export functionality
+    function exportSalesCSV() {
+        if (sales.length === 0) {
+            showToast("No sales to export", true);
+            return;
+        }
+        
+        const headers = ['ID', 'Medicine', 'Quantity', 'Unit Price', 'Total Price', 'Date'];
+        const rows = sales.map(s => {
+            const unitPrice = (parseFloat(s.total_price) / s.quantity_sold).toFixed(2);
+            const date = new Date(s.sale_date).toLocaleString();
+            return [s.id, s.medicine_name, s.quantity_sold, unitPrice, parseFloat(s.total_price).toFixed(2), date];
+        });
+        
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sales_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        showToast("Sales exported successfully!");
+    }
+
+    // Add today's sales summary
+    function getTodaysSales() {
+        const today = new Date().toDateString();
+        return sales.filter(s => new Date(s.sale_date).toDateString() === today);
+    }
+
+    // Add export button to header
+    document.addEventListener('DOMContentLoaded', () => {
+        const headerDiv = document.querySelector('header div.flex.items-center.gap-3');
+        if (headerDiv) {
+            const exportBtn = document.createElement('button');
+            exportBtn.className = 'bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-all flex items-center gap-2';
+            exportBtn.innerHTML = `
+                <i data-lucide="download" class="w-4 h-4"></i> Export
+            `;
+            exportBtn.onclick = exportSalesCSV;
+            headerDiv.appendChild(exportBtn);
+            lucide.createIcons();
+        }
+    });
+
+    // Auto-refresh sales data every 30 seconds
+    setInterval(() => {
+        if (!document.hidden) { // Only refresh if page is visible
+            fetchInitialData();
+        }
+    }, 30000);
+</script>
+</body>
+</html>
