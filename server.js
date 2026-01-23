@@ -26,7 +26,6 @@ app.get('/suppliers', (req, res) => {
     res.sendFile(path.join(__dirname, 'view', 'suppliers.html')); 
 });
 // Routes
-app.use("/api/auth", require("./routes/auth"));
 app.use("/api/medicines", require("./routes/medicines"));
 app.use("/api/sales", require("./routes/sales"));
 app.use("/api/suppliers", require("./routes/suppliers"));
@@ -37,6 +36,6 @@ app.get("/", (req, res) => {
   res.send("Pharmacy Management API is running 🚀");
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
