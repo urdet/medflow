@@ -41,7 +41,6 @@ MedFlow is a comprehensive pharmacy management system designed to streamline ope
 ## .env Configuration
 Create a `.env` file in the root directory of the project and add the following environment variables:
 ```
-JWT_SECRET="YourSecretKey"
 POSTGRES_USER="your_postgres_username"
 POSTGRES_PASSWORD="your_postgres_password"
 POSTGRES_DB="your_database_name"
@@ -49,3 +48,12 @@ POSTGRES_HOST="your_database_host"
 POSTGRES_PORT="your_database_port"
 ```
 Replace the placeholder values with your actual database credentials and desired JWT secret key.
+
+## Structure de projet
+- `views/`: Contient les modèles de vues pour le rendu côté serveur.
+- `routes/`: Contient les définitions des routes pour l'application et communication au base de données.
+- `db/`: Contient les scripts et configurations liés à la base de données.
+- server.js: Point d'entrée principal de l'application.
+- package.json: Fichier de configuration des dépendances et scripts npm.
+- .env: Fichier de configuration des variables d'environnement.
+- package-lock.json: Fichier de verrouillage des dépendances npm.
